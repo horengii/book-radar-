@@ -3,8 +3,8 @@ main = "index.js"
 compatibility_date = "2026-08-06"
 
 [vars]
-# 배포 전 본인 GitHub Pages 주소로 바꿀 것.
-ALLOWED_ORIGIN = "https://USERNAME.github.io"
+# Origin 헤더는 스킴+호스트만 담고 경로(/book-radar-)는 포함하지 않는다.
+ALLOWED_ORIGIN = "https://horengii.github.io"
 
 # 로컬에서 web/ 을 8765 포트로 띄워 붙일 때:
 #   npx wrangler dev --var ALLOWED_ORIGIN:http://localhost:8765
