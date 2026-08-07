@@ -41,9 +41,12 @@ export const TITLE_MATCH_THRESHOLD = 0.8;
 // 근거 텍스트 전송량 상한 — T2.3.
 export const MAX_DESCRIPTION_CHARS = 1200;
 
+// recommend 만 Sonnet 5. 실존 도서를 지식에서 꺼내오는 작업이라 모델 성능이
+// gate3 생존율로 직결된다. taste 는 주어진 목록에서 고르기만 하고, summary 는
+// 150자 소개글이 천장이라 둘 다 올릴 이유가 없다(2026-08-08 판단).
 export const MODELS = {
   summary: 'claude-haiku-4-5-20251001',
-  recommend: 'claude-sonnet-4-6',
+  recommend: 'claude-sonnet-5',
   taste: 'claude-sonnet-4-6',
 };
 

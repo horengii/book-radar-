@@ -279,8 +279,14 @@ gate3_verifyExists(candidates, aladinClient)
 | 작업 | 모델 | max_tokens |
 |---|---|---|
 | 요약 + 태그 | `claude-haiku-4-5-20251001` | 500 |
-| 유사 도서 추천 | `claude-sonnet-4-6` | 600 |
+| 유사 도서 추천 | `claude-sonnet-5` | 600 |
 | 취향 종합 필터 | `claude-sonnet-4-6` | 400 |
+
+> 2026-08-08 조정: 추천만 Sonnet 5로 올렸다. 실존 도서를 모델 지식에서 꺼내오는 작업이라
+> 모델 성능이 gate3 생존율(= 최종 추천 권수)로 직결되기 때문이다. 취향 필터는 주어진 목록에서
+> 고르기만 하므로, 요약은 소개글 150자가 천장이므로 각각 4.6과 Haiku로 유지한다.
+> **Sonnet 5는 `thinking` 을 생략하면 적응형 사고가 켜진다.** max_tokens 600에서는 사고 토큰이
+> 답변을 밀어내 JSON 이 잘리므로 `thinking: {type:'disabled'}` 를 명시한다.
 
 - 소개글은 앞 1,200자만, 목차는 대제목만 추출해 전송
 - ` ```json ` 펜스 제거 후 파싱, 실패 시 null 반환(재시도 금지)

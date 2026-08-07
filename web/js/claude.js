@@ -26,7 +26,7 @@ function parseJson(text) {
   }
 }
 
-async function call({ system, user, model, maxTokens }) {
+async function call({ system, user, model, maxTokens, thinking = null }) {
   if (!isUnderLimit()) return { ok: false, reason: '이번 달 생성 한도에 도달했습니다.' };
 
   const { proxyUrl, apiKey } = getSettings();
@@ -40,6 +40,10 @@ async function call({ system, user, model, maxTokens }) {
     system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: user }],
   };
+
+  // Sonnet 5 는 thinking 을 생략하면 적응형 사고가 켜진다. max_tokens 가 작아
+  // 사고 토큰이 답변을 밀어내면 JSON 이 잘려 파싱 실패 → 결과 0건이 된다.
+  if (thinking) body.thinking = thinking;
 
   let res;
   try {
@@ -95,6 +99,7 @@ export async function recommendSimilar(book, exclusionTitles) {
     user: recommendUser(book, exclusionTitles),
     model: MODELS.recommend,
     maxTokens: MAX_TOKENS.recommend,
+    thinking: { type: 'disabled' },
   });
 }
 
