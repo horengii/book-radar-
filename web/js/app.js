@@ -45,6 +45,12 @@ async function route() {
 function init() {
   load();
 
+  // 독에 추가한 웹앱은 마지막 URL(해시)을 기억해 재실행 시 상세 화면으로 열린다.
+  // 시작은 항상 순위여야 하므로 해시를 지운다. replaceState 라 hashchange 는 뜨지 않는다.
+  if (window.location.hash) {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+
   for (const btn of document.querySelectorAll('[data-nav]')) {
     btn.addEventListener('click', () => {
       window.location.hash = btn.dataset.nav;
