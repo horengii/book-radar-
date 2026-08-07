@@ -1,26 +1,8 @@
 #!/bin/bash
-cd "$(dirname "$0")"
+# 배포된 앱을 연다. 로컬 서버는 띄우지 않는다.
+#
+# localStorage 는 출처(origin)별로 분리되므로, 로컬 서버(http://localhost:8765)와
+# 배포 주소는 설정·서재를 공유하지 않는다. 저장소를 한 곳으로 모으려고 배포 주소만 쓴다.
+# 코드 수정 후 push 전에 확인하려면 개발서버.command 를 쓸 것.
 
-PORT=8765
-PYTHON=$(which python3 2>/dev/null || which python)
-URL="http://localhost:$PORT"
-
-# 이미 떠 있으면 서버를 새로 띄우지 않고 브라우저만 연다
-if curl -s -o /dev/null --max-time 1 "$URL"; then
-  open "$URL"
-  osascript -e 'tell application "Terminal" to close front window' 2>/dev/null &
-  exit 0
-fi
-
-cd web
-nohup "$PYTHON" -m http.server "$PORT" >/dev/null 2>&1 &
-disown
-
-sleep 1
-open "$URL"
-
-echo "book-radar 실행 중 — $URL"
-echo "같은 와이파이의 폰에서 보려면: http://$(ipconfig getifaddr en0 2>/dev/null || echo '맥-IP'):$PORT"
-echo "종료하려면 종료.command 를 더블클릭하세요."
-
-osascript -e 'tell application "Terminal" to close front window' 2>/dev/null &
+open "https://horengii.github.io/book-radar-/"

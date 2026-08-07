@@ -48,21 +48,33 @@ npx wrangler dev --var ALLOWED_ORIGIN:http://localhost:8765
 저장소 `Settings > Pages`에서 소스를 `main` 브랜치 `/web` 폴더로 지정한다.
 배포 후 앱 `설정` 화면에서 Worker 주소와 (2단계부터) Claude API 키를 입력한다.
 
-## 로컬 실행
+## 실행
 
-**`실행.command` 더블클릭.** 서버가 뜨고 브라우저가 열린다. 끌 때는 `종료.command`.
+**`실행.command` 더블클릭** — 배포된 앱(https://horengii.github.io/book-radar-/)이 열린다.
+폰에서는 같은 주소를 북마크해 쓴다.
 
-이미 떠 있으면 서버를 새로 띄우지 않고 브라우저만 연다. 터미널 창을 닫아도 서버는 계속 돈다.
+### 설정이 사라져 보일 때
 
-같은 와이파이의 폰에서 보려면 실행 시 표시되는 `http://<맥-IP>:8765` 주소로 접속한다.
+localStorage는 **출처(origin)별로 분리**된다. 아래 둘은 설정·서재를 공유하지 않는다:
 
-직접 띄우려면:
+| 출처 | 여는 방법 |
+|---|---|
+| `https://horengii.github.io` | `실행.command` (평소 사용) |
+| `http://localhost:8765` | `개발서버.command` (개발용) |
+
+한쪽에서 입력한 프록시 주소와 API 키는 다른 쪽에 나타나지 않는다. 데이터를 옮기려면
+설정 탭의 **내보내기 → 가져오기**를 쓴다. 기기 간 이동도 같은 방법이다.
+
+### 개발용 로컬 서버
+
+코드를 고치고 push 전에 확인할 때만 쓴다.
 
 ```bash
 cd web && python3 -m http.server 8765
 ```
 
-`http://localhost:8765` 접속. ES Modules라 `file://`로 열면 동작하지 않는다.
+`개발서버.command` 더블클릭도 같다. 끌 때는 `종료.command`.
+ES Modules라 `file://`로 열면 동작하지 않는다.
 
 ## 테스트
 
