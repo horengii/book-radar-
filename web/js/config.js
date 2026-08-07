@@ -1,4 +1,5 @@
-// 알라딘 CategoryId. 알라딘 공개 분류표 기준이며, TTB 키 발급 후 실제 응답으로 한 번 확인할 것.
+// 알라딘 CategoryId. 2026-08-08 실제 응답의 searchCategoryName 으로 8개 전부 검증했다.
+// 55890 은 원래 '실용'으로 뒀으나 알라딘 실제 분류가 '건강/취미'라 라벨을 맞췄다.
 export const CATEGORIES = [
   { id: 'all', label: '전체', cid: 0 },
   { id: 'novel', label: '소설', cid: 1 },
@@ -7,7 +8,7 @@ export const CATEGORIES = [
   { id: 'humanities', label: '인문', cid: 656 },
   { id: 'essay', label: '에세이', cid: 55889 },
   { id: 'science', label: '과학', cid: 987 },
-  { id: 'practical', label: '실용', cid: 55890 },
+  { id: 'hobby', label: '건강/취미', cid: 55890 },
 ];
 
 export const LIBRARY_STATUS = [
