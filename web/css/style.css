@@ -145,6 +145,10 @@ body {
   margin-bottom: var(--gap);
 }
 
+/* width:100% 인 input 이 flex 안에서 넘치지 않게 한다 */
+.rowbar input { flex: 1; min-width: 0; }
+.rowbar .btn { flex: 0 0 auto; }
+
 /* 배지 */
 .badge {
   display: inline-block;

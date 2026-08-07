@@ -1,8 +1,7 @@
 import { CATEGORIES } from '../config.js';
 import { fetchRanking } from '../aladin.js';
-import { getRanking, putRanking, mergeBook } from '../cache.js';
-import { getLibraryEntry, setLibraryStatus } from '../state.js';
-import { primaryAuthor } from '../util.js';
+import { getRanking, putRanking } from '../cache.js';
+import { bookRow } from './booklist.js';
 import { el, clear, notice } from './dom.js';
 
 const chipsRoot = document.getElementById('category-chips');
@@ -40,70 +39,16 @@ function renderChips() {
   }
 }
 
-function openDetail(book) {
-  mergeBook({
-    isbn13: book.isbn13,
-    title: book.title,
-    author: book.author,
-    publisher: book.publisher,
-    pages: book.pages,
-    cover: book.cover,
-    itemId: book.itemId,
-  });
-  window.location.hash = `detail/${book.isbn13}`;
-}
-
-function addButton(book) {
-  const saved = getLibraryEntry(book.isbn13);
-  const button = el('button', {
-    class: 'btn btn--slim',
-    type: 'button',
-    text: saved ? '담김' : '담기',
-    disabled: Boolean(saved),
-  });
-  button.addEventListener('click', (event) => {
-    event.stopPropagation();
-    mergeBook({
-      isbn13: book.isbn13,
-      title: book.title,
-      author: book.author,
-      publisher: book.publisher,
-      pages: book.pages,
-      cover: book.cover,
-    });
-    setLibraryStatus(book.isbn13, 'wish');
-    button.textContent = '담김';
-    button.disabled = true;
-  });
-  return button;
-}
-
-function row(book) {
-  const meta = [primaryAuthor(book.author), book.publisher].filter(Boolean).join(' · ');
-  const body = el('div', { class: 'list__body' }, [
-    el('div', { class: 'list__title', text: book.title }),
-    el('div', { class: 'list__meta', text: meta }),
-    tasteBadges.has(book.isbn13)
-      ? el('span', { class: 'badge badge--taste', text: `취향 적합 · ${tasteBadges.get(book.isbn13)}` })
-      : null,
-  ]);
-
-  const item = el('li', { class: 'list__item' }, [
-    el('span', { class: 'list__rank', text: String(book.rank ?? '') }),
-    body,
-    addButton(book),
-  ]);
-  body.addEventListener('click', () => openDetail(book));
-  return item;
-}
-
 function renderList(items) {
   clear(listRoot);
   if (items.length === 0) {
     listRoot.append(notice('순위를 불러오지 못했습니다.'));
     return;
   }
-  for (const book of items) listRoot.append(row(book));
+  for (const book of items) {
+    const why = tasteBadges.get(book.isbn13);
+    listRoot.append(bookRow(book, { rank: book.rank ?? '', badge: why ? `취향 적합 · ${why}` : null }));
+  }
 }
 
 async function select(category) {

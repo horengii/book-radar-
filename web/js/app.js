@@ -2,10 +2,11 @@
 import { load } from './state.js';
 import * as ranking from './ui/ranking.js';
 import * as library from './ui/library.js';
+import * as search from './ui/search.js';
 import * as taste from './ui/taste.js';
 
-const SCREENS = ['ranking', 'library', 'settings', 'detail'];
-const TABS = ['ranking', 'library', 'settings'];
+const SCREENS = ['ranking', 'search', 'library', 'settings', 'detail'];
+const TABS = ['ranking', 'search', 'library', 'settings'];
 
 function parseHash() {
   const [name, param] = window.location.hash.replace('#', '').split('/');
@@ -53,6 +54,7 @@ function init() {
 
   window.addEventListener('hashchange', route);
   ranking.init();
+  search.init();
   taste.init();
   route();
 }

@@ -22,6 +22,14 @@
       <ol class="list" id="ranking-list"></ol>
     </section>
 
+    <section class="screen" id="screen-search" data-screen="search" hidden>
+      <div class="rowbar">
+        <input type="text" id="search-input" placeholder="제목이나 저자로 검색" autocomplete="off">
+        <button class="btn" type="button" id="search-btn">검색</button>
+      </div>
+      <ul class="list" id="search-list"></ul>
+    </section>
+
     <section class="screen" id="screen-library" data-screen="library" hidden>
       <div class="chips" id="library-filters"></div>
       <ul class="list" id="library-list"></ul>
@@ -39,6 +47,7 @@
 
   <nav class="tabbar" id="tabbar">
     <button class="tabbar__btn" type="button" data-nav="ranking" aria-current="page">순위</button>
+    <button class="tabbar__btn" type="button" data-nav="search">검색</button>
     <button class="tabbar__btn" type="button" data-nav="library">서재</button>
     <button class="tabbar__btn" type="button" data-nav="settings">설정</button>
   </nav>
