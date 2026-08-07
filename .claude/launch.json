@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "book-radar",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd web && exec python3 -m http.server 8765"],
+      "port": 8765
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+name = "book-radar-proxy"
+main = "index.js"
+compatibility_date = "2026-08-06"
+
+[vars]
+# 배포 전 본인 GitHub Pages 주소로 바꿀 것.
+ALLOWED_ORIGIN = "https://USERNAME.github.io"
+
+# 로컬에서 web/ 을 8765 포트로 띄워 붙일 때:
+#   npx wrangler dev --var ALLOWED_ORIGIN:http://localhost:8765
+#
+# 알라딘 TTB 키는 vars 에 두지 않는다. 아래로 등록한다:
+#   npx wrangler secret put ALADIN_TTB_KEY
+#   npx wrangler dev 는 worker/.dev.vars 의 ALADIN_TTB_KEY 를 읽는다(.gitignore 대상)

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>book-radar</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="topbar__title">book-radar</h1>
+  </header>
+
+  <main id="main">
+    <section class="screen" id="screen-ranking" data-screen="ranking">
+      <div class="chips" id="category-chips"></div>
+      <div class="rowbar">
+        <button class="btn" type="button" id="taste-btn">취향 종합 추천</button>
+        <span class="notice" id="taste-status"></span>
+      </div>
+      <ol class="list" id="ranking-list"></ol>
+    </section>
+
+    <section class="screen" id="screen-library" data-screen="library" hidden>
+      <div class="chips" id="library-filters"></div>
+      <ul class="list" id="library-list"></ul>
+    </section>
+
+    <section class="screen" id="screen-settings" data-screen="settings" hidden>
+      <div id="settings-root"></div>
+    </section>
+
+    <section class="screen" id="screen-detail" data-screen="detail" hidden>
+      <button class="btn-back" id="detail-back" type="button">← 뒤로</button>
+      <div id="detail-root"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tabbar__btn" type="button" data-nav="ranking" aria-current="page">순위</button>
+    <button class="tabbar__btn" type="button" data-nav="library">서재</button>
+    <button class="tabbar__btn" type="button" data-nav="settings">설정</button>
+  </nav>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
