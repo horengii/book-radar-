@@ -31,8 +31,10 @@ export const FETCH_TIMEOUT_MS = 15000;
 export const CLAUDE_TIMEOUT_MS = 60000;
 export const DEFAULT_MONTHLY_LIMIT = 100;
 
-// 게이트 임계값 — 2장 규칙 1.
-export const MIN_SOURCE_CHARS = 200;
+// 게이트 임계값 — 2장 규칙 1. 원안은 200자였으나, 알라딘 기본 TTB 키는
+// fullDescription/Toc/Story 확장 필드를 제공하지 않고 짧은 description(대개
+// 100~200자)만 준다는 사실이 실사용 중 드러나 100으로 낮췄다(2026-08-07 합의).
+export const MIN_SOURCE_CHARS = 100;
 export const TITLE_MATCH_THRESHOLD = 0.8;
 
 // 근거 텍스트 전송량 상한 — T2.3.

@@ -23,10 +23,14 @@
 AI 생성 결과는 반드시 `web/js/gates.js`의 3단 게이트를 통과해야 DOM에 삽입된다. 게이트를 우회하는 코드 경로를 만들지 말 것.
 
 ```
-gate1_canGenerate()  → 근거 텍스트 200자 미만이면 API 호출 자체를 하지 않음
+gate1_canGenerate()  → 근거 텍스트 100자 미만이면 API 호출 자체를 하지 않음
 gate2_verifyOutput() → 근거에 없는 숫자·고유명사가 포함된 필드는 폐기(null 처리)
 gate3_verifyExists() → 추천 도서는 알라딘 조회 성공 + 저자 일치 건만 통과
 ```
+
+> 2026-08-07 조정: 원안은 200자였다. 실사용 중 알라딘 기본 TTB 키가 `fullDescription`/`Toc`/`Story`
+> 확장 필드를 제공하지 않고 짧은 `description`(대개 100~200자)만 준다는 게 확인되어, 사용자 승인 하에
+> 100자로 낮췄다. 알라딘에 확장 필드 권한을 별도 신청해 승인받으면 다시 올리는 것도 고려할 것.
 
 - 게이트 실패는 **에러가 아니라 정상 상태**다. 재시도하지 말고 해당 필드만 비운다.
 - 웹 검색 도구(`web_search_20250305`)는 **사용 금지**. 출처 검증 불가 + 비용 과다.
@@ -223,7 +227,7 @@ book-radar/
 
 ```
 gate1_canGenerate(description, toc)
-  → 근거 텍스트 합계 200자 미만이면 false
+  → 근거 텍스트 합계 200자 미만이면 false (2장 조정 노트 참고 — 실제 값은 100)
 
 gate2_verifyOutput(field, sourceText)
   → field에 등장하는 숫자(연도/금액/퍼센트/페이지)가 sourceText에 문자열로 없으면 null

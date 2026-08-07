@@ -2,19 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { gate1_canGenerate, gate2_verifyOutput, gate3_verifyExists } from '../web/js/gates.js';
+import { MIN_SOURCE_CHARS } from '../web/js/config.js';
 
 const LONG = '이 책은 국민연금 수령 시기를 늦추면 연금액이 늘어난다는 점을 설명한다. '.repeat(6);
 
-test('gate1 — 근거 200자 미만이면 생성하지 않는다', () => {
+// 임계값을 하드코딩하지 않고 설정값 기준으로 경계를 만든다 — 값이 바뀌어도 테스트가 안 깨진다.
+test('gate1 — 근거가 기준 미만이면 생성하지 않는다', () => {
   assert.equal(gate1_canGenerate('짧은 소개글', ''), false);
   assert.equal(gate1_canGenerate('', ''), false);
   assert.equal(gate1_canGenerate(null, undefined), false);
+  assert.equal(gate1_canGenerate('ㄱ'.repeat(MIN_SOURCE_CHARS - 1), ''), false);
 });
 
-test('gate1 — 소개글과 목차를 합쳐 200자를 넘으면 생성한다', () => {
-  const half = 'ㄱ'.repeat(120);
-  assert.equal(gate1_canGenerate(half, ''), false);
+test('gate1 — 소개글과 목차를 합쳐 기준을 넘으면 생성한다', () => {
+  const half = 'ㄱ'.repeat(Math.ceil(MIN_SOURCE_CHARS / 2));
   assert.equal(gate1_canGenerate(half, half), true);
+  assert.equal(gate1_canGenerate('ㄱ'.repeat(MIN_SOURCE_CHARS), ''), true);
   assert.equal(gate1_canGenerate(LONG, ''), true);
 });
 
