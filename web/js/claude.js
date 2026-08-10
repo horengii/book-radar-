@@ -1,4 +1,4 @@
-import { CLAUDE_TIMEOUT_MS, MAX_DESCRIPTION_CHARS, MAX_TOKENS, MODELS } from './config.js';
+import { CLAUDE_API_URL, CLAUDE_TIMEOUT_MS, MAX_DESCRIPTION_CHARS, MAX_TOKENS, MODELS } from './config.js';
 import { bumpUsage, getSettings, isUnderLimit } from './state.js';
 import { tocHeadings, truncate } from './util.js';
 import {
@@ -29,8 +29,7 @@ function parseJson(text) {
 async function call({ system, user, model, maxTokens, thinking = null }) {
   if (!isUnderLimit()) return { ok: false, reason: '이번 달 생성 한도에 도달했습니다.' };
 
-  const { proxyUrl, apiKey } = getSettings();
-  if (!proxyUrl) return { ok: false, reason: '설정에서 프록시 주소를 먼저 입력해 주세요.' };
+  const { apiKey } = getSettings();
   if (!apiKey) return { ok: false, reason: '설정에서 Claude API 키를 먼저 입력해 주세요.' };
 
   const body = {
@@ -47,12 +46,13 @@ async function call({ system, user, model, maxTokens, thinking = null }) {
 
   let res;
   try {
-    res = await fetch(`${proxyUrl.replace(/\/+$/, '')}/claude`, {
+    res = await fetch(CLAUDE_API_URL, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(CLAUDE_TIMEOUT_MS),
@@ -61,7 +61,9 @@ async function call({ system, user, model, maxTokens, thinking = null }) {
     return { ok: false, reason: 'Claude에 연결하지 못했습니다.' };
   }
 
-  if (res.status === 401 || res.status === 403) return { ok: false, reason: 'API 키가 올바르지 않습니다.' };
+  // 401 과 403 을 합치면 "키가 틀렸다"는 오해를 부른다. 403 은 키는 맞는데 권한·정책 문제다.
+  if (res.status === 401) return { ok: false, reason: 'API 키가 올바르지 않습니다.' };
+  if (res.status === 403) return { ok: false, reason: '이 키로는 호출이 허용되지 않습니다(권한 또는 차단).' };
   if (res.status === 429) return { ok: false, reason: '요청이 몰렸습니다. 잠시 후 다시 열어 주세요.' };
   if (!res.ok) return { ok: false, reason: '생성 요청이 거절되었습니다. 크레딧 잔액을 확인해 주세요.' };
 

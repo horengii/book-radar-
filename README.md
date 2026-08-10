@@ -26,9 +26,11 @@ tests/    node:test 게이트 테스트
 
 ## 프록시 배포
 
-알라딘 Open API는 CORS 헤더를 주지 않아 브라우저에서 직접 호출할 수 없다. 그래서 프록시가 필요하고,
-어차피 필요하므로 Claude 호출도 같은 곳을 경유시킨다. **Claude API 키는 프록시에 저장하지 않는다** —
-설정 화면에서 입력해 브라우저에 두고 요청마다 헤더로 전달한다(BYOK).
+알라딘 Open API는 CORS 헤더를 주지 않아 브라우저에서 직접 호출할 수 없다. 그래서 프록시가 필요하다.
+
+**Claude는 프록시를 거치지 않고 브라우저에서 직접 호출한다.** Anthropic이 Cloudflare Worker에서
+나가는 요청을 403 `Request not allowed`로 차단하기 때문이다(2026-08-08 확인). API 키는 설정 화면에서
+입력해 브라우저에만 두고, 요청마다 헤더로 Anthropic에 직접 보낸다(BYOK).
 
 ```bash
 cd worker

@@ -77,6 +77,13 @@ Claude API는 `anthropic-dangerous-direct-browser-access: true` 헤더로 직접
 - 알라딘 TTB 키가 클라이언트에 노출되지 않음
 - Workers 캐시로 순위 응답 재사용 → 알라딘 호출량 감소
 
+> 2026-08-08 정정: **Claude 는 프록시를 경유하지 않고 브라우저에서 직접 호출한다.**
+> Anthropic 이 Cloudflare Worker 에서 나가는 요청을 403 `Request not allowed` 로 차단하는 것이
+> 실사용 중 확인됐다(모델·키와 무관하게 전부 차단, 알라딘 경로는 정상). 위에서 이미 허용한
+> `anthropic-dangerous-direct-browser-access: true` 경로로 전환했다. 키는 원래도 브라우저에만
+> 있었으므로 노출은 늘지 않는다 — 오히려 제3자(워커)를 거치지 않아 경유 지점이 줄었다.
+> 워커의 `/claude` 는 되돌릴 수 있도록 남겨두되 앱은 쓰지 않는다.
+
 **Claude API 키는 프록시에 저장하지 않는다.** 사용자가 설정 화면에서 입력해 localStorage에 두고, 요청마다 헤더로 전달한다(BYOK). 프록시는 키를 저장하거나 로깅하지 않는다.
 
 ---

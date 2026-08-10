@@ -1,5 +1,8 @@
 // 알라딘이 CORS 헤더를 주지 않아 브라우저에서 직접 못 부른다.
-// 어차피 프록시가 필요하므로 Claude 호출도 같은 곳으로 모은다(4장).
+//
+// /claude 는 현재 앱이 쓰지 않는다. Anthropic 이 Cloudflare Worker 에서 나가는 요청을
+// 403 "Request not allowed" 로 차단해(2026-08-08 확인), 클라이언트가 브라우저에서
+// 직접 호출하도록 바꿨다. Anthropic 이 다시 허용하면 이 경로로 되돌릴 수 있어 남겨둔다.
 
 const ALADIN_BASE = 'https://www.aladin.co.kr/ttb/api';
 const ALADIN_PATHS = { ItemList: 'ItemList.aspx', ItemLookUp: 'ItemLookUp.aspx', ItemSearch: 'ItemSearch.aspx' };
@@ -86,6 +89,7 @@ export default {
     const origin = request.headers.get('Origin');
     if (origin && origin !== env.ALLOWED_ORIGIN) return new Response('Forbidden', { status: 403 });
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(env) });
+
     if (request.method !== 'POST') return fail('POST만 지원합니다.', 405, env);
 
     const { pathname } = new URL(request.url);

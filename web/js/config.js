@@ -27,6 +27,11 @@ export const STORAGE_KEY = 'book-radar/v1';
 export const SCHEMA_VERSION = 1;
 export const RANKING_SIZE = 20;
 export const RANKING_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7일(7.1)
+// Claude 는 프록시를 거치지 않고 브라우저에서 직접 부른다. Cloudflare Worker 에서
+// 나가는 요청을 Anthropic 이 403 "Request not allowed" 로 차단하기 때문(2026-08-08 확인).
+// 4장이 애초에 허용한 경로이고, 키는 브라우저에만 있으므로 노출도 늘지 않는다.
+export const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+
 export const FETCH_TIMEOUT_MS = 15000;
 // 생성 호출은 15초를 넘길 수 있다. 재시도가 금지라 중간에 끊으면 과금만 남는다.
 export const CLAUDE_TIMEOUT_MS = 60000;
