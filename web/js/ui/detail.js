@@ -47,9 +47,15 @@ function section(label, node) {
   return el('div', { class: 'card__section' }, [el('p', { class: 'card__label', text: label }), node]);
 }
 
+// 게이트를 통과한 필드가 하나도 없으면 근거가 있었다고 말할 수 없다. 여기서 판정하면
+// source: 'description' 으로 이미 저장된 캐시 항목도 재호출 없이 함께 교정된다.
+function hasGroundedField(summary) {
+  return Boolean(summary.oneLine || summary.keyPoints?.length || summary.forWhom || summary.notForWhom);
+}
+
 function summaryCard(book) {
   const summary = book.summary ?? EMPTY_SUMMARY;
-  const grounded = summary.source === 'description';
+  const grounded = summary.source === 'description' && hasGroundedField(summary);
   const card = el('div', { class: 'card' }, [
     el('span', { class: 'badge', text: grounded ? '소개글 기반' : '요약 정보 없음' }),
   ]);
@@ -89,13 +95,13 @@ function summaryCard(book) {
 
 // 게이트 통과분만 저장한다. 실패 필드는 null 로 남긴다(규칙 1).
 function applyGate2(raw, sourceText) {
-  return {
+  const fields = {
     oneLine: gate2_verifyOutput(raw?.oneLine, sourceText),
     keyPoints: gate2_verifyOutput(raw?.keyPoints, sourceText),
     forWhom: gate2_verifyOutput(raw?.forWhom, sourceText),
     notForWhom: gate2_verifyOutput(raw?.notForWhom, sourceText),
-    source: 'description',
   };
+  return { ...fields, source: hasGroundedField(fields) ? 'description' : 'none' };
 }
 
 function paint(book, extra = null) {
