@@ -122,15 +122,23 @@ export async function render(isbn13) {
   clear(root).append(notice(cached ? '' : '불러오는 중…'));
   if (cached) paint(cached, notice('소개글 확인 중…'));
 
+  // 조회가 실패해도 이미 아는 서지정보까지 지우지 않는다. 서재에 담아둔 책은
+  // 공급원이 바뀌면서 조회가 안 될 수 있는데, 그때 화면이 통째로 비면 상태 변경도 막힌다.
+  const fallback = (message) => {
+    const known = getBook(isbn13);
+    if (known) paint(known, notice(message, true));
+    else clear(root).append(notice(message, true));
+  };
+
   let detail;
   try {
     detail = await fetchDetail(isbn13);
   } catch (error) {
-    clear(root).append(notice(error.message, true));
+    fallback(error.message);
     return;
   }
   if (!detail) {
-    clear(root).append(notice('알라딘에서 이 책을 찾지 못했습니다.', true));
+    fallback('카카오 책 검색에서 이 책을 찾지 못했습니다.');
     return;
   }
 
