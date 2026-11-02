@@ -1,14 +1,15 @@
-// 알라딘 CategoryId. 2026-08-08 실제 응답의 searchCategoryName 으로 8개 전부 검증했다.
-// 55890 은 원래 '실용'으로 뒀으나 알라딘 실제 분류가 '건강/취미'라 라벨을 맞췄다.
+// 정보나루는 KDC(한국십진분류) 로만 거를 수 있다. 알라딘의 '자기계발'은 대응하는 KDC 가
+// 없고 '소설'과 '에세이'는 둘 다 KDC 8(문학) 이라 분리되지 않아, 분야를 KDC 기준으로
+// 다시 짰다(2026-11-02). 라벨을 바꾸고 싶으면 이 배열만 고치면 된다.
 export const CATEGORIES = [
-  { id: 'all', label: '전체', cid: 0 },
-  { id: 'novel', label: '소설', cid: 1 },
-  { id: 'economy', label: '경제경영', cid: 170 },
-  { id: 'self', label: '자기계발', cid: 336 },
-  { id: 'humanities', label: '인문', cid: 656 },
-  { id: 'essay', label: '에세이', cid: 55889 },
-  { id: 'science', label: '과학', cid: 987 },
-  { id: 'hobby', label: '건강/취미', cid: 55890 },
+  { id: 'all', label: '전체', kdc: null },
+  { id: 'literature', label: '문학', kdc: '8' },
+  { id: 'social', label: '사회과학', kdc: '3' },
+  { id: 'philosophy', label: '철학', kdc: '1' },
+  { id: 'history', label: '역사', kdc: '9' },
+  { id: 'science', label: '자연과학', kdc: '4' },
+  { id: 'tech', label: '기술과학', kdc: '5' },
+  { id: 'art', label: '예술', kdc: '6' },
 ];
 
 export const LIBRARY_STATUS = [
@@ -27,6 +28,9 @@ export const STORAGE_KEY = 'book-radar/v1';
 export const SCHEMA_VERSION = 1;
 export const RANKING_SIZE = 20;
 export const RANKING_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7일(7.1)
+// 정보나루 인기대출 조회 기간. 대출 집계는 반영까지 시차가 있어 창을 좁게 잡으면
+// 빈 결과가 온다. 실제 지연 폭을 확인하면 줄일 수 있다.
+export const RANKING_WINDOW_DAYS = 90;
 // Claude 는 프록시를 거치지 않고 브라우저에서 직접 부른다. Cloudflare Worker 에서
 // 나가는 요청을 Anthropic 이 403 "Request not allowed" 로 차단하기 때문(2026-08-08 확인).
 // 4장이 애초에 허용한 경로이고, 키는 브라우저에만 있으므로 노출도 늘지 않는다.
@@ -64,4 +68,3 @@ export const TAG_AXES = {
   angle: ['경험담', '데이터분석', '이론정리', '인터뷰', '사례모음'],
 };
 
-export const ALADIN_ITEM_URL = 'https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=';

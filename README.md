@@ -13,20 +13,26 @@
 
 ```
 web/      정적 프론트엔드 (Vanilla JS, ES Modules, 빌드 스텝 없음)
-worker/   Cloudflare Worker 프록시 (알라딘 CORS 우회 + Claude 중계)
+worker/   Cloudflare Worker 프록시 (카카오·정보나루 키 은닉 + Claude 중계)
 tests/    node:test 게이트 테스트
 ```
 
 ## 준비
 
-1. **알라딘 TTB 키** — aladin.co.kr 우측 하단 `제휴안내 > 알라딘 API`
-2. **Anthropic API 키 + 크레딧** — console.anthropic.com (2단계 요약 기능에만 필요)
-3. **Cloudflare 계정**(무료)
-4. **GitHub 저장소** + Pages 활성화
+1. **카카오 REST API 키** — developers.kakao.com `내 애플리케이션 > 앱 키`. 검색·상세 담당
+2. **도서관 정보나루 인증키** — data4library.kr. 순위 담당. 발급 후 활성화까지 시차가 있다
+3. **Anthropic API 키 + 크레딧** — console.anthropic.com (2단계 요약 기능에만 필요)
+4. **Cloudflare 계정**(무료)
+5. **GitHub 저장소** + Pages 활성화
+
+> 알라딘 Open API는 2026-10-30 전면 종료됐다(신규 키 발급은 2026-09-04 중단).
+> 공급원을 카카오 책 검색 + 도서관 정보나루로 교체했다.
 
 ## 프록시 배포
 
-알라딘 Open API는 CORS 헤더를 주지 않아 브라우저에서 직접 호출할 수 없다. 그래서 프록시가 필요하다.
+카카오는 CORS를 열어주지만 프록시를 거친다. GitHub Pages는 공개 호스팅이라 REST 키를 소스에
+박으면 그대로 노출되기 때문이다. 정보나루 인증키도 같은 이유로 프록시에 둔다. 두 키는 Worker
+시크릿(`KAKAO_REST_KEY`, `LIBRARY_AUTH_KEY`)으로만 존재하고 브라우저에는 내려가지 않는다.
 
 **Claude는 프록시를 거치지 않고 브라우저에서 직접 호출한다.** Anthropic이 Cloudflare Worker에서
 나가는 요청을 403 `Request not allowed`로 차단하기 때문이다(2026-08-08 확인). API 키는 설정 화면에서
@@ -90,7 +96,7 @@ node --test "tests/*.test.js"
 
 - 요약·태그는 ISBN13 키로 **영구 캐시**. 같은 책을 두 번 열어도 API를 부르지 않는다.
 - 순위 20권을 미리 생성하지 않는다. 탭한 책만 그 시점에 생성한다.
-- 근거 텍스트가 100자 미만이면 **API를 호출하지 않고** `요약 정보 없음`을 표시한다. (원안은 200자였으나, 알라딘 기본 TTB 키가 짧은 `description`만 주고 `fullDescription`/`Toc`를 안 줘서 100으로 조정 — [config.js](web/js/config.js)의 `MIN_SOURCE_CHARS` 참고)
+- 근거 텍스트가 100자 미만이면 **API를 호출하지 않고** `요약 정보 없음`을 표시한다. (원안은 200자였으나 짧은 소개글만 들어와 100으로 조정 — [config.js](web/js/config.js)의 `MIN_SOURCE_CHARS` 참고. 카카오 소개글은 250자 내외로 들어온다)
 - 월간 생성 상한(기본 100회)에 도달하면 신규 생성을 중단하고 캐시만 제공한다.
 - 추천 결과는 서재 상태 해시로 캐시. 서재가 안 바뀌면 재호출하지 않는다.
 
@@ -98,7 +104,7 @@ node --test "tests/*.test.js"
 
 | 화면 | 하는 일 |
 |---|---|
-| 순위 | 분야별 베스트셀러 20위. Claude 호출 없음 |
+| 순위 | KDC 분야별 인기대출도서 20위(정보나루). Claude 호출 없음 |
 | 검색 | 순위 밖의 책을 제목·저자로 찾아 담거나 요약 확인. Claude 호출 없음 |
 | 서재 | 읽음 / 읽는중 / 찜 3단계 관리 |
 | 설정 | 프록시 주소, API 키, 월간 상한, 캐시 통계, 내보내기/가져오기 |
@@ -113,7 +119,7 @@ AI 생성 결과는 `web/js/gates.js`의 3단 게이트를 통과해야 화면�
 |---|---|
 | `gate1_canGenerate` | 근거 텍스트 100자 미만이면 API 호출 자체를 하지 않음 |
 | `gate2_verifyOutput` | 근거에 없는 숫자·고유명사가 든 필드를 폐기(null) |
-| `gate3_verifyExists` | 추천 도서는 알라딘 조회 성공 + 저자 일치 건만 통과 |
+| `gate3_verifyExists` | 추천 도서는 카카오 조회 성공 + 저자 일치 건만 통과 |
 
 게이트 실패는 에러가 아니라 정상 상태다. 재시도하지 않고 해당 필드만 비운다.
 

@@ -1,5 +1,5 @@
 import { CATEGORIES } from '../config.js';
-import { fetchRanking } from '../aladin.js';
+import { fetchRanking } from '../books.js';
 import { getRanking, putRanking } from '../cache.js';
 import { bookRow } from './booklist.js';
 import { el, clear, notice } from './dom.js';
@@ -12,7 +12,7 @@ let tasteBadges = new Map(); // isbn13 -> 사유 (T3.3에서 채운다)
 
 export function setTasteBadges(map) {
   tasteBadges = map ?? new Map();
-  const items = getRanking(current.cid);
+  const items = getRanking(current.id);
   if (items) renderList(items);
 }
 
@@ -21,7 +21,7 @@ export function currentCategory() {
 }
 
 export function currentItems() {
-  return getRanking(current.cid) ?? [];
+  return getRanking(current.id) ?? [];
 }
 
 function renderChips() {
@@ -55,7 +55,7 @@ async function select(category) {
   current = category;
   renderChips();
 
-  const cached = getRanking(category.cid);
+  const cached = getRanking(category.id);
   if (cached) {
     renderList(cached);
     return;
@@ -63,8 +63,8 @@ async function select(category) {
 
   clear(listRoot).append(notice('순위 불러오는 중…'));
   try {
-    const items = await fetchRanking(category.cid);
-    putRanking(category.cid, items);
+    const items = await fetchRanking(category.kdc);
+    putRanking(category.id, items);
     renderList(items);
   } catch (error) {
     clear(listRoot).append(notice(error.message, true));
@@ -72,7 +72,7 @@ async function select(category) {
 }
 
 export function refresh() {
-  const cached = getRanking(current.cid);
+  const cached = getRanking(current.id);
   if (cached) renderList(cached);
 }
 

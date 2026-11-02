@@ -1,6 +1,6 @@
 // 순위에 없는 책을 제목·저자로 찾는다. 이 화면에서 Claude 호출은 발생하지 않는다 —
 // 요약은 사용자가 책을 탭한 시점에만 생성된다(규칙 2, 지연 생성).
-import { searchBooks } from '../aladin.js';
+import { searchBooks } from '../books.js';
 import { bookRow } from './booklist.js';
 import { el, clear, notice } from './dom.js';
 

@@ -1,5 +1,5 @@
-import { ALADIN_ITEM_URL, LIBRARY_STATUS } from '../config.js';
-import { fetchDetail } from '../aladin.js';
+import { LIBRARY_STATUS } from '../config.js';
+import { fetchDetail } from '../books.js';
 import { buildSourceText, generateSummary } from '../claude.js';
 import { getBook, mergeBook, putBook } from '../cache.js';
 import { gate1_canGenerate, gate2_verifyOutput } from '../gates.js';
@@ -78,15 +78,10 @@ function summaryCard(book) {
     card.append(tags);
   }
 
-  if (!grounded) {
+  if (!grounded && book.link) {
     card.append(
       el('p', { class: 'field__hint' }, [
-        el('a', {
-          href: book.itemId ? `${ALADIN_ITEM_URL}${book.itemId}` : book.link || '#',
-          target: '_blank',
-          rel: 'noopener',
-          text: '알라딘에서 보기',
-        }),
+        el('a', { href: book.link, target: '_blank', rel: 'noopener', text: '책 정보 보기' }),
       ]),
     );
   }

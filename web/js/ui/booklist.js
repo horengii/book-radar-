@@ -14,7 +14,7 @@ function bibliographic(book) {
     publisher: book.publisher,
     pages: book.pages,
     cover: book.cover,
-    itemId: book.itemId,
+    link: book.link,
   };
 }
 

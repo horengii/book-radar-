@@ -59,9 +59,9 @@ export function gate2_verifyOutput(field, sourceText) {
   return isGrounded(field, source) ? field : null;
 }
 
-/* gate3 — 추천 도서는 알라딘에 실제로 있고 저자가 일치해야 한다 */
+/* gate3 — 추천 도서는 공급원에 실제로 있고 저자가 일치해야 한다 */
 
-export async function gate3_verifyExists(candidates, aladinClient) {
+export async function gate3_verifyExists(candidates, bookClient) {
   const verified = [];
 
   for (const candidate of candidates ?? []) {
@@ -69,7 +69,7 @@ export async function gate3_verifyExists(candidates, aladinClient) {
 
     let results;
     try {
-      results = await aladinClient.searchBooks(`${candidate.title} ${primaryAuthor(candidate.author)}`.trim());
+      results = await bookClient.searchBooks(`${candidate.title} ${primaryAuthor(candidate.author)}`.trim());
     } catch {
       continue; // 조회 실패는 "확인되지 않음"이다. 통과시키지 않는다.
     }

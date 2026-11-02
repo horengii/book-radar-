@@ -1,14 +1,21 @@
-// 알라딘이 CORS 헤더를 주지 않아 브라우저에서 직접 못 부른다.
+// 알라딘 OpenAPI 가 2026-10-30 전면 종료되어(errorCode 999) 공급원을 둘로 나눴다.
+//   /kakao   — 카카오 책 검색. 검색·ISBN 단건 조회·추천 실존 검증
+//   /library — 도서관 정보나루. 인기대출 순위·도서 상세(책소개)
+// 카카오는 CORS 를 열어주지만(Access-Control-Allow-Origin: *) 프록시를 거친다.
+// GitHub Pages 는 공개 호스팅이라 REST 키를 소스에 박으면 그대로 노출되고,
+// 그 키가 사용자의 카카오톡 '나에게 보내기' 앱과 같은 앱이라 쿼터 도용 피해가 번진다.
 //
 // /claude 는 현재 앱이 쓰지 않는다. Anthropic 이 Cloudflare Worker 에서 나가는 요청을
 // 403 "Request not allowed" 로 차단해(2026-08-08 확인), 클라이언트가 브라우저에서
 // 직접 호출하도록 바꿨다. Anthropic 이 다시 허용하면 이 경로로 되돌릴 수 있어 남겨둔다.
 
-const ALADIN_BASE = 'https://www.aladin.co.kr/ttb/api';
-const ALADIN_PATHS = { ItemList: 'ItemList.aspx', ItemLookUp: 'ItemLookUp.aspx', ItemSearch: 'ItemSearch.aspx' };
+const KAKAO_URL = 'https://dapi.kakao.com/v3/search/book';
+const LIBRARY_BASE = 'https://data4library.kr/api';
+const LIBRARY_METHODS = new Set(['loanItemSrch', 'srchDtlList']);
 const RANKING_TTL = 21600; // 6시간
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const JSON_TYPE = 'application/json; charset=utf-8';
+const UPSTREAM_TIMEOUT = 15000;
 
 function corsHeaders(env) {
   return {
@@ -31,32 +38,49 @@ function fail(message, status, env) {
   return new Response(JSON.stringify({ error: message }), { status, headers });
 }
 
-async function handleAladin(request, env, ctx) {
-  const { method, params } = await request.json();
-  const path = ALADIN_PATHS[method];
-  if (!path) return fail('지원하지 않는 요청입니다.', 400, env);
-  if (!env.ALADIN_TTB_KEY) return fail('프록시에 알라딘 키가 설정되지 않았습니다.', 500, env);
-
-  const url = new URL(`${ALADIN_BASE}/${path}`);
+function applyParams(url, params) {
   for (const [k, v] of Object.entries(params ?? {})) url.searchParams.set(k, String(v));
-  url.searchParams.set('output', 'js');
-  url.searchParams.set('Version', '20131101');
+  return url;
+}
 
-  // 캐시 키는 TTB 키를 붙이기 전 URL로 만든다. 키가 캐시에 남지 않도록.
+async function relay(upstream) {
+  return new Response(await upstream.text(), {
+    status: upstream.status,
+    headers: { 'content-type': JSON_TYPE },
+  });
+}
+
+async function handleKakao(request, env) {
+  if (!env.KAKAO_REST_KEY) return fail('프록시에 카카오 키가 설정되지 않았습니다.', 500, env);
+  const { params } = await request.json();
+
+  const upstream = await fetch(applyParams(new URL(KAKAO_URL), params), {
+    headers: { Authorization: `KakaoAK ${env.KAKAO_REST_KEY}` },
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT),
+  });
+  return withCors(await relay(upstream), env);
+}
+
+async function handleLibrary(request, env, ctx) {
+  if (!env.LIBRARY_AUTH_KEY) return fail('프록시에 정보나루 키가 설정되지 않았습니다.', 500, env);
+  const { method, params } = await request.json();
+  if (!LIBRARY_METHODS.has(method)) return fail('지원하지 않는 요청입니다.', 400, env);
+
+  const url = applyParams(new URL(`${LIBRARY_BASE}/${method}`), params);
+  url.searchParams.set('format', 'json');
+
+  // 캐시 키는 인증키를 붙이기 전 URL로 만든다. 키가 캐시에 남지 않도록.
   const cache = caches.default;
   const cacheKey = new Request(url.toString());
-  const cacheable = method === 'ItemList';
+  const cacheable = method === 'loanItemSrch';
   if (cacheable) {
     const hit = await cache.match(cacheKey);
     if (hit) return withCors(hit, env);
   }
 
-  url.searchParams.set('ttbkey', env.ALADIN_TTB_KEY);
-  const upstream = await fetch(url, { signal: AbortSignal.timeout(15000) });
-  const res = new Response(await upstream.text(), {
-    status: upstream.status,
-    headers: { 'content-type': JSON_TYPE },
-  });
+  url.searchParams.set('authKey', env.LIBRARY_AUTH_KEY);
+  const upstream = await fetch(url, { signal: AbortSignal.timeout(UPSTREAM_TIMEOUT) });
+  const res = await relay(upstream);
   if (cacheable && upstream.ok) {
     res.headers.set('cache-control', `public, max-age=${RANKING_TTL}`);
     ctx.waitUntil(cache.put(cacheKey, res.clone()));
@@ -80,8 +104,7 @@ async function handleClaude(request, env) {
     body: await request.text(),
     signal: AbortSignal.timeout(60000),
   });
-  const headers = { 'content-type': JSON_TYPE };
-  return withCors(new Response(await upstream.text(), { status: upstream.status, headers }), env);
+  return withCors(await relay(upstream), env);
 }
 
 export default {
@@ -94,7 +117,8 @@ export default {
 
     const { pathname } = new URL(request.url);
     try {
-      if (pathname === '/aladin') return await handleAladin(request, env, ctx);
+      if (pathname === '/kakao') return await handleKakao(request, env);
+      if (pathname === '/library') return await handleLibrary(request, env, ctx);
       if (pathname === '/claude') return await handleClaude(request, env);
       return fail('없는 경로입니다.', 404, env);
     } catch {

@@ -1,5 +1,5 @@
 import { EXCLUSION_REASONS } from '../config.js';
-import * as aladin from '../aladin.js';
+import * as books from '../books.js';
 import { recommendSimilar } from '../claude.js';
 import { getBook, getRecs, libraryHash, mergeBook, putRecs } from '../cache.js';
 import { gate3_verifyExists } from '../gates.js';
@@ -87,8 +87,8 @@ async function run(container, book, force = false) {
     return;
   }
 
-  // gate3 — 알라딘 조회 성공 + 저자 일치 건만 통과시킨다(규칙 1).
-  const verified = await gate3_verifyExists(result.data?.candidates ?? [], aladin);
+  // gate3 — 카카오 조회 성공 + 저자 일치 건만 통과시킨다(규칙 1).
+  const verified = await gate3_verifyExists(result.data?.candidates ?? [], books);
   putRecs(key, { items: verified });
   paint(container, book, verified);
 }

@@ -20,8 +20,8 @@ function excludedTitles() {
 }
 
 // 주차 + 서재 해시로 캐시한다. 서재가 그대로면 다시 부르지 않는다(규칙 2).
-function tasteKey(cid) {
-  return `taste:${cid}:${weekKey()}:${libraryHash(getLibrary(), getExclusions())}`;
+function tasteKey(categoryId) {
+  return `taste:${categoryId}:${weekKey()}:${libraryHash(getLibrary(), getExclusions())}`;
 }
 
 function show(picks) {
@@ -42,7 +42,7 @@ async function run() {
     return;
   }
 
-  const key = tasteKey(currentCategory().cid);
+  const key = tasteKey(currentCategory().id);
   const cached = getRecs(key);
   if (cached) {
     show(cached.items);

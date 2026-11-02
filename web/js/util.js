@@ -24,7 +24,7 @@ export function truncate(text, max) {
   return text.length <= max ? text : text.slice(0, max);
 }
 
-// HTML 태그가 섞여 오는 알라딘 소개글을 근거 텍스트로 쓰기 전 정리한다.
+// HTML 태그가 섞여 올 수 있는 소개글을 근거 텍스트로 쓰기 전 정리한다.
 export function stripTags(html) {
   if (typeof html !== 'string') return '';
   return html
@@ -82,7 +82,7 @@ export function similarity(a, b) {
   return (2 * hits) / (x.length - 1 + (y.length - 1));
 }
 
-// 알라딘 저자 필드는 "홍길동 (지은이), 김철수 (옮긴이)" 형태다. 지은이만 남긴다.
+// 저자 필드는 "홍길동, 김철수" 또는 "홍길동 (지은이)" 형태로 온다. 첫 저자만 남긴다.
 export function primaryAuthor(author) {
   const first = String(author ?? '').split(',')[0] ?? '';
   return first.replace(/\([^)]*\)/g, '').trim();
