@@ -12,6 +12,13 @@ const root = document.getElementById('detail-root');
 
 const EMPTY_SUMMARY = { oneLine: null, keyPoints: null, forWhom: null, notForWhom: null, source: 'none' };
 
+// 예스24 약관상 예스24 데이터를 보여준 책에는 상품 상세로 가는 링크를 줘야 한다(제6조③4).
+function productLink(book) {
+  if (!book.link) return null;
+  const text = book.link.includes('yes24.com') ? '예스24에서 보기' : '책 정보 보기';
+  return el('div', { class: 'list__meta' }, [el('a', { href: book.link, target: '_blank', rel: 'noopener', text })]);
+}
+
 function header(book) {
   const cover = book.cover ? el('img', { class: 'cover', src: book.cover, alt: '' }) : null;
   return el('div', { class: 'card__head' }, [
@@ -20,6 +27,7 @@ function header(book) {
       el('h2', { class: 'card__title', text: book.title ?? '' }),
       el('div', { class: 'list__meta', text: [primaryAuthor(book.author), book.publisher].filter(Boolean).join(' · ') }),
       el('div', { class: 'list__meta', text: [book.pages ? `${book.pages}쪽` : '', readingTime(book.pages) ?? ''].filter(Boolean).join(' · ') }),
+      productLink(book),
     ]),
   ]);
 }
@@ -77,15 +85,18 @@ function summaryCard(book) {
     }
     card.append(tags);
   }
-
-  if (!grounded && book.link) {
-    card.append(
-      el('p', { class: 'field__hint' }, [
-        el('a', { href: book.link, target: '_blank', rel: 'noopener', text: '책 정보 보기' }),
-      ]),
-    );
-  }
   return card;
+}
+
+// 순위에서 들어온 책은 예스24 서지정보(페이지 수·상품 링크)를 이미 갖고 있다. 카카오는
+// 페이지 수를 주지 않으므로 그대로 덮으면 독서시간이 사라진다 — 빈 칸만 채운다.
+function fillGaps(known, incoming) {
+  const empty = (value) => value === undefined || value === null || value === '';
+  const out = { isbn13: known.isbn13 ?? incoming.isbn13 };
+  for (const [key, value] of Object.entries(incoming)) {
+    if (!empty(value) && empty(known[key])) out[key] = value;
+  }
+  return out;
 }
 
 // 게이트 통과분만 저장한다. 실패 필드는 null 로 남긴다(규칙 1).
@@ -142,7 +153,7 @@ export async function render(isbn13) {
     return;
   }
 
-  mergeBook({ ...detail, description: undefined, toc: undefined });
+  mergeBook(fillGaps(getBook(isbn13) ?? {}, { ...detail, description: undefined, toc: undefined }));
   const book = getBook(isbn13);
 
   if (!gate1_canGenerate(detail.description, detail.toc)) {

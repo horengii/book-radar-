@@ -1,6 +1,8 @@
-// 알라딘 OpenAPI 가 2026-10-30 전면 종료되어(errorCode 999) 공급원을 둘로 나눴다.
+// 알라딘 OpenAPI 가 2026-10-30 전면 종료되어(errorCode 999) 공급원을 나눴다.
+//   /yes24   — 예스24. 판매 베스트셀러 순위
 //   /kakao   — 카카오 책 검색. 검색·ISBN 단건 조회·추천 실존 검증
-//   /library — 도서관 정보나루. 인기대출 순위·도서 상세(책소개)
+//   /library — 도서관 정보나루. 인기대출 순위. 예스24 가 실패할 때의 대체 경로
+// 예스24 는 CORS 헤더를 주지 않고, 문서도 키를 클라이언트 코드에 넣지 말라고 한다.
 // 카카오는 CORS 를 열어주지만(Access-Control-Allow-Origin: *) 프록시를 거친다.
 // GitHub Pages 는 공개 호스팅이라 REST 키를 소스에 박으면 그대로 노출되고,
 // 그 키가 사용자의 카카오톡 '나에게 보내기' 앱과 같은 앱이라 쿼터 도용 피해가 번진다.
@@ -9,6 +11,8 @@
 // 403 "Request not allowed" 로 차단해(2026-08-08 확인), 클라이언트가 브라우저에서
 // 직접 호출하도록 바꿨다. Anthropic 이 다시 허용하면 이 경로로 되돌릴 수 있어 남겨둔다.
 
+const YES24_BASE = 'https://apis.yes24.com/v1';
+const YES24_PATHS = new Set(['category/list', 'category/bestseller']);
 const KAKAO_URL = 'https://dapi.kakao.com/v3/search/book';
 const LIBRARY_BASE = 'https://data4library.kr/api';
 const LIBRARY_METHODS = new Set(['loanItemSrch', 'srchDtlList']);
@@ -48,6 +52,30 @@ async function relay(upstream) {
     status: upstream.status,
     headers: { 'content-type': JSON_TYPE },
   });
+}
+
+async function handleYes24(request, env, ctx) {
+  if (!env.YES24_API_KEY) return fail('프록시에 예스24 키가 설정되지 않았습니다.', 500, env);
+  const { path, params } = await request.json();
+  if (!YES24_PATHS.has(path)) return fail('지원하지 않는 요청입니다.', 400, env);
+
+  // 키는 헤더로만 가므로 URL 을 그대로 캐시 키로 써도 키가 남지 않는다.
+  const url = applyParams(new URL(`${YES24_BASE}/${path}`), params);
+  const cache = caches.default;
+  const cacheKey = new Request(url.toString());
+  const hit = await cache.match(cacheKey);
+  if (hit) return withCors(hit, env);
+
+  const upstream = await fetch(url, {
+    headers: { 'X-Api-Key': env.YES24_API_KEY },
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT),
+  });
+  const res = await relay(upstream);
+  if (upstream.ok) {
+    res.headers.set('cache-control', `public, max-age=${RANKING_TTL}`);
+    ctx.waitUntil(cache.put(cacheKey, res.clone()));
+  }
+  return withCors(res, env);
 }
 
 async function handleKakao(request, env) {
@@ -117,6 +145,7 @@ export default {
 
     const { pathname } = new URL(request.url);
     try {
+      if (pathname === '/yes24') return await handleYes24(request, env, ctx);
       if (pathname === '/kakao') return await handleKakao(request, env);
       if (pathname === '/library') return await handleLibrary(request, env, ctx);
       if (pathname === '/claude') return await handleClaude(request, env);

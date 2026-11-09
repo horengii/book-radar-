@@ -1,15 +1,16 @@
-// 정보나루는 KDC(한국십진분류) 로만 거를 수 있다. 알라딘의 '자기계발'은 대응하는 KDC 가
-// 없고 '소설'과 '에세이'는 둘 다 KDC 8(문학) 이라 분리되지 않아, 분야를 KDC 기준으로
-// 다시 짰다(2026-11-02). 라벨을 바꾸고 싶으면 이 배열만 고치면 된다.
+// yes24Id 는 예스24 분류 ID 다. 2026-11-09 /v1/category/list 실제 응답(1,361개)의 국내도서
+// 대분류에서 골랐고, 8개 모두 20권 · ISBN13 · 페이지 수가 빠짐없이 오는 것을 확인했다.
+// loanKdc 는 예스24 가 실패할 때 정보나루 대출 순위로 대신 보여줄 KDC 다. 대응이 깨끗한
+// 분야만 둔다 — 'all' 은 분류 없이 전체, null 은 대체하지 않음(자기계발 등은 KDC 대응이 없다).
 export const CATEGORIES = [
-  { id: 'all', label: '전체', kdc: null },
-  { id: 'literature', label: '문학', kdc: '8' },
-  { id: 'social', label: '사회과학', kdc: '3' },
-  { id: 'philosophy', label: '철학', kdc: '1' },
-  { id: 'history', label: '역사', kdc: '9' },
-  { id: 'science', label: '자연과학', kdc: '4' },
-  { id: 'tech', label: '기술과학', kdc: '5' },
-  { id: 'art', label: '예술', kdc: '6' },
+  { id: 'all', label: '전체', yes24Id: '001', loanKdc: 'all' },
+  { id: 'novel', label: '소설', yes24Id: '001001046', loanKdc: '8' },
+  { id: 'economy', label: '경제경영', yes24Id: '001001025', loanKdc: null },
+  { id: 'self', label: '자기계발', yes24Id: '001001026', loanKdc: null },
+  { id: 'humanities', label: '인문', yes24Id: '001001019', loanKdc: '1' },
+  { id: 'essay', label: '에세이', yes24Id: '001001047', loanKdc: null },
+  { id: 'science', label: '과학', yes24Id: '001001002', loanKdc: '4' },
+  { id: 'hobby', label: '건강/취미', yes24Id: '001001011', loanKdc: null },
 ];
 
 export const LIBRARY_STATUS = [
@@ -28,9 +29,9 @@ export const STORAGE_KEY = 'book-radar/v1';
 export const SCHEMA_VERSION = 1;
 export const RANKING_SIZE = 20;
 export const RANKING_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7일(7.1)
-// 정보나루 인기대출 조회 기간. 대출 집계는 반영까지 시차가 있어 창을 좁게 잡으면
-// 빈 결과가 온다. 실제 지연 폭을 확인하면 줄일 수 있다.
-export const RANKING_WINDOW_DAYS = 90;
+// 정보나루 인기대출 조회 기간(예스24 실패 시 대체 경로 전용). 2026-11-09 실측으로 14일
+// 창도 어제까지 집계가 차 있어 시차는 작았다. 응답 시간은 창 길이와 무관하게 11~15초다.
+export const RANKING_WINDOW_DAYS = 30;
 // Claude 는 프록시를 거치지 않고 브라우저에서 직접 부른다. Cloudflare Worker 에서
 // 나가는 요청을 Anthropic 이 403 "Request not allowed" 로 차단하기 때문(2026-08-08 확인).
 // 4장이 애초에 허용한 경로이고, 키는 브라우저에만 있으므로 노출도 늘지 않는다.

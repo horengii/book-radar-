@@ -13,26 +13,28 @@
 
 ```
 web/      정적 프론트엔드 (Vanilla JS, ES Modules, 빌드 스텝 없음)
-worker/   Cloudflare Worker 프록시 (카카오·정보나루 키 은닉 + Claude 중계)
+worker/   Cloudflare Worker 프록시 (예스24·카카오·정보나루 키 은닉 + Claude 중계)
 tests/    node:test 게이트 테스트
 ```
 
 ## 준비
 
-1. **카카오 REST API 키** — developers.kakao.com `내 애플리케이션 > 앱 키`. 검색·상세 담당
-2. **도서관 정보나루 인증키** — data4library.kr. 순위 담당. 발급 후 활성화까지 시차가 있다
+1. **예스24 Open API 키** — developers.yes24.com. 판매 순위 담당. 즉시 발급
+2. **카카오 REST API 키** — developers.kakao.com `내 애플리케이션 > 앱 키`. 검색·상세 담당
+   (예스24 가 실패할 때 대신 쓰는 정보나루 인증키 — data4library.kr — 는 선택)
 3. **Anthropic API 키 + 크레딧** — console.anthropic.com (2단계 요약 기능에만 필요)
 4. **Cloudflare 계정**(무료)
 5. **GitHub 저장소** + Pages 활성화
 
 > 알라딘 Open API는 2026-10-30 전면 종료됐다(신규 키 발급은 2026-09-04 중단).
-> 공급원을 카카오 책 검색 + 도서관 정보나루로 교체했다.
+> 공급원을 예스24(순위) + 카카오 책 검색(검색·상세)으로 교체했다.
+> 예스24 약관상 순위 화면의 출처 표기와 상세 화면의 예스24 상품 링크는 지우면 안 된다.
 
 ## 프록시 배포
 
-카카오는 CORS를 열어주지만 프록시를 거친다. GitHub Pages는 공개 호스팅이라 REST 키를 소스에
-박으면 그대로 노출되기 때문이다. 정보나루 인증키도 같은 이유로 프록시에 둔다. 두 키는 Worker
-시크릿(`KAKAO_REST_KEY`, `LIBRARY_AUTH_KEY`)으로만 존재하고 브라우저에는 내려가지 않는다.
+예스24는 CORS 헤더를 주지 않는다. 카카오는 CORS를 열어주지만 GitHub Pages가 공개 호스팅이라
+키를 소스에 박으면 그대로 노출된다. 그래서 모든 도서 키는 Worker 시크릿(`YES24_API_KEY`,
+`KAKAO_REST_KEY`, `LIBRARY_AUTH_KEY`)으로만 존재하고 브라우저에는 내려가지 않는다.
 
 **Claude는 프록시를 거치지 않고 브라우저에서 직접 호출한다.** Anthropic이 Cloudflare Worker에서
 나가는 요청을 403 `Request not allowed`로 차단하기 때문이다(2026-08-08 확인). API 키는 설정 화면에서
@@ -104,7 +106,7 @@ node --test "tests/*.test.js"
 
 | 화면 | 하는 일 |
 |---|---|
-| 순위 | KDC 분야별 인기대출도서 20위(정보나루). Claude 호출 없음 |
+| 순위 | 분야별 판매 베스트셀러 20위(예스24). 예스24 실패 시 일부 분야는 정보나루 대출 순위로 대신 표시. Claude 호출 없음 |
 | 검색 | 순위 밖의 책을 제목·저자로 찾아 담거나 요약 확인. Claude 호출 없음 |
 | 서재 | 읽음 / 읽는중 / 찜 3단계 관리 |
 | 설정 | 프록시 주소, API 키, 월간 상한, 캐시 통계, 내보내기/가져오기 |
