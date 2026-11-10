@@ -12,11 +12,21 @@ const root = document.getElementById('detail-root');
 
 const EMPTY_SUMMARY = { oneLine: null, keyPoints: null, forWhom: null, notForWhom: null, source: 'none' };
 
+const YES24_SEARCH_URL = 'https://www.yes24.com/product/search?domain=BOOK&query=';
+
 // 예스24 약관상 예스24 데이터를 보여준 책에는 상품 상세로 가는 링크를 줘야 한다(제6조③4).
+// 상품 링크가 없는 책도 있다 — 9월 이전에 담은 책은 link 를 저장하지 않았고, 요약이 캐시된
+// 책은 조회 없이 그리므로(규칙 2) 받아올 기회가 없다. 그때는 ISBN 검색 주소로 보낸다.
 function productLink(book) {
-  if (!book.link) return null;
-  const text = book.link.includes('yes24.com') ? '예스24에서 보기' : '책 정보 보기';
-  return el('div', { class: 'list__meta' }, [el('a', { href: book.link, target: '_blank', rel: 'noopener', text })]);
+  const href = book.link?.includes('yes24.com')
+    ? book.link
+    : book.isbn13
+      ? `${YES24_SEARCH_URL}${book.isbn13}`
+      : null;
+  if (!href) return null;
+  return el('div', { class: 'list__meta' }, [
+    el('a', { href, target: '_blank', rel: 'noopener', text: '예스24에서 보기' }),
+  ]);
 }
 
 function header(book) {
