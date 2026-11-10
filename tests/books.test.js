@@ -2,7 +2,7 @@
 // 카카오 응답에 굿즈·비도서가 섞여 들어오는 것을 실측으로 확인해 테스트로 고정한다.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { plainAuthors, toIsbn13 } from '../web/js/books.js';
+import { cleanToc, plainAuthors, toIsbn13 } from '../web/js/normalize.js';
 
 test('ISBN10 과 ISBN13 이 같이 오면 ISBN13 만 고른다', () => {
   assert.equal(toIsbn13('1141602458 9791141602451'), '9791141602451');
@@ -61,4 +61,18 @@ test('정보나루 저자 표기에서 역할 접두·접미를 뗀다', () => {
 
 test('공동 저자는 첫 저자가 맨 앞에 남는다', () => {
   assert.equal(plainAuthors('신영준,고영성 지음').split(',')[0], '신영준');
+});
+
+// 예스24 목차는 2026-11-10 itemDetail 실제 응답(가호)에서 가져왔다.
+test('목차 줄 끝의 쪽 번호를 뗀다 — gate2 에 근거 없는 숫자를 주지 않는다', () => {
+  const raw = '1장 가호와 모터사이클 남자 007\r\n2장 무사시사카이의 개미핥기 035\r\n3장 가호와 흰개미 여왕 119';
+  assert.equal(cleanToc(raw), '1장 가호와 모터사이클 남자\n2장 무사시사카이의 개미핥기\n3장 가호와 흰개미 여왕');
+});
+
+test('목차의 HTML 줄바꿈과 점선 쪽 번호도 정리한다', () => {
+  assert.equal(cleanToc('제1부 깨달음<br/>제2부 강물 ……… 85'), '제1부 깨달음\n제2부 강물');
+});
+
+test('장 번호는 줄 앞에 있으므로 남는다', () => {
+  assert.equal(cleanToc('1장 시작'), '1장 시작');
 });

@@ -153,7 +153,11 @@ export async function render(isbn13) {
     return;
   }
 
-  mergeBook(fillGaps(getBook(isbn13) ?? {}, { ...detail, description: undefined, toc: undefined }));
+  const patch = fillGaps(getBook(isbn13) ?? {}, { ...detail, description: undefined, toc: undefined });
+  // 예스24 상세를 썼으면 링크는 예스24 상품 페이지여야 한다(약관 제6조③4). 검색에서 들어온
+  // 책은 카카오(다음) 링크를 이미 갖고 있어 빈 칸 채우기로는 바뀌지 않는다.
+  if (detail.source === 'yes24' && detail.link) patch.link = detail.link;
+  mergeBook(patch);
   const book = getBook(isbn13);
 
   if (!gate1_canGenerate(detail.description, detail.toc)) {

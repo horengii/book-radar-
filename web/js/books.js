@@ -1,11 +1,12 @@
 // 도서 데이터 공급원. 알라딘 OpenAPI 가 2026-10-30 종료되어 나뉘었다.
-//   예스24 — 판매 베스트셀러 순위(페이지 수 포함)
-//   카카오 책 검색 — 검색, ISBN13 단건 조회(소개글 포함), 추천 실존 검증
+//   예스24 — 판매 베스트셀러 순위, ISBN13 상세(소개글·목차·페이지 수)
+//   카카오 책 검색 — 검색, 추천 실존 검증, 예스24 에 소개글이 없을 때 대신 쓰는 소개글
 //   도서관 정보나루 — 인기대출 순위. 예스24 가 실패할 때만 쓴다
 // 모두 Worker 프록시를 거친다. 예스24 는 CORS 를 주지 않고, 카카오는 CORS 를 열어주지만
 // GitHub Pages 가 공개 호스팅이라 키를 소스에 박으면 그대로 노출되기 때문이다(4장).
 import { FETCH_TIMEOUT_MS, RANKING_SIZE, RANKING_WINDOW_DAYS } from './config.js';
 import { getSettings } from './state.js';
+import { cleanToc, plainAuthors, toIsbn13 } from './normalize.js';
 import { stripTags } from './util.js';
 
 async function callProxy(path, body) {
@@ -34,16 +35,6 @@ async function callProxy(path, body) {
 
 /* 카카오 책 검색 */
 
-// isbn 필드는 "ISBN10 ISBN13" 공백 구분이지만 한쪽만 오기도 하고, 굿즈·비도서
-// (팬사인회 상품 등)에는 ISBN 아닌 13자리 바코드가 들어온다. 위치로 자르면 안 된다 —
-// 978/979 로 시작하는 13자리만 ISBN13 이다.
-export function toIsbn13(raw) {
-  for (const token of String(raw ?? '').split(/\s+/)) {
-    if (/^97[89]\d{10}$/.test(token)) return token;
-  }
-  return '';
-}
-
 function fromKakao(doc) {
   return {
     isbn13: toIsbn13(doc.isbn),
@@ -65,7 +56,7 @@ export async function searchBooks(query, max = 5) {
   return (data.documents ?? []).map(fromKakao).filter((book) => book.isbn13);
 }
 
-export async function fetchDetail(isbn13) {
+async function fetchKakaoDetail(isbn13) {
   const data = await callKakao({ query: isbn13, target: 'isbn', size: 1 });
   const doc = (data.documents ?? [])[0];
   if (!doc) return null;
@@ -74,29 +65,33 @@ export async function fetchDetail(isbn13) {
     ...fromKakao(doc),
     isbn13: toIsbn13(doc.isbn) || isbn13,
     description: stripTags(doc.contents ?? ''),
-    toc: '', // 두 공급원 모두 목차를 주지 않는다
+    toc: '', // 카카오는 목차를 주지 않는다
   };
 }
 
-/* 예스24 — 판매 베스트셀러 */
+// 요약 근거는 예스24 소개글(310~480자, 실측)을 먼저 쓴다. 카카오(250자 내외)의 두 배다.
+// 예스24 소개글이 빈 책이 있어(싯다르타 등) 그때는 카카오 소개글만 빌리고, 페이지 수·목차·
+// 상품 링크는 예스24 것을 살린다. 예스24 에 아예 없는 책은 카카오만으로 간다.
+export async function fetchDetail(isbn13) {
+  let yes24 = null;
+  try {
+    yes24 = await fetchYes24Detail(isbn13);
+  } catch {
+    yes24 = null; // 예스24 는 우선 공급원일 뿐이다. 실패해도 카카오로 넘어간다
+  }
+  if (yes24?.description) return yes24;
 
-// 저자 표기가 공급원마다 다르다. 예스24 "무라카미 하루키 저/홍은주 역",
-// 정보나루 "지은이: 한강" · "요한 하리 지음 ;김하현 옮김" · "글: 정문정 ;그림: 피도크".
-// 역할 표기를 떼고 쉼표로 이어 카카오("구병모")와 같은 모양으로 맞춘다 —
-// primaryAuthor 가 첫 저자만 쓰고, gate3 의 저자 일치 비교도 이 모양을 전제한다.
-export function plainAuthors(raw) {
-  return String(raw ?? '')
-    .split(/[/;]/)
-    .map((part) =>
-      part
-        .trim()
-        .replace(/^[^:：]{1,6}[:：]\s*/, '')
-        .replace(/\s*(저|글|그림|역|옮김|지음|편|편저|엮음|감수|원작|공저)$/, '')
-        .trim(),
-    )
-    .filter(Boolean)
-    .join(', ');
+  let kakao = null;
+  try {
+    kakao = await fetchKakaoDetail(isbn13);
+  } catch (error) {
+    if (!yes24) throw error;
+  }
+  if (!yes24) return kakao;
+  return { ...yes24, description: kakao?.description ?? '' };
 }
+
+/* 예스24 — 판매 베스트셀러 */
 
 function fromYes24(item) {
   return {
@@ -109,6 +104,22 @@ function fromYes24(item) {
     link: item.link ?? '',
     rank: Number(item.sortOrder) || null,
     source: 'yes24',
+  };
+}
+
+async function fetchYes24Detail(isbn13) {
+  const params = { searchType: 'ISBN13', query: isbn13, detail: 'Y' }; // detail=Y 여야 페이지 수가 온다
+  const data = await callProxy('/yes24', { path: 'goods/itemDetail', params });
+  const item = data.success ? (data.data?.items ?? [])[0] : null;
+  if (!item) return null;
+
+  const content = item.contentDetail ?? {};
+  const { rank, ...book } = fromYes24(item); // 순위는 상세 캐시에 남기지 않는다
+  return {
+    ...book,
+    isbn13: book.isbn13 || isbn13,
+    description: stripTags(content.bookIntroduction || content.bookSummary || ''),
+    toc: cleanToc(content.tableOfContents ?? ''),
   };
 }
 

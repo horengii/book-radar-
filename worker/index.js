@@ -1,5 +1,5 @@
 // 알라딘 OpenAPI 가 2026-10-30 전면 종료되어(errorCode 999) 공급원을 나눴다.
-//   /yes24   — 예스24. 판매 베스트셀러 순위
+//   /yes24   — 예스24. 판매 베스트셀러 순위, ISBN13 상세(소개글·목차·페이지 수)
 //   /kakao   — 카카오 책 검색. 검색·ISBN 단건 조회·추천 실존 검증
 //   /library — 도서관 정보나루. 인기대출 순위. 예스24 가 실패할 때의 대체 경로
 // 예스24 는 CORS 헤더를 주지 않고, 문서도 키를 클라이언트 코드에 넣지 말라고 한다.
@@ -12,7 +12,7 @@
 // 직접 호출하도록 바꿨다. Anthropic 이 다시 허용하면 이 경로로 되돌릴 수 있어 남겨둔다.
 
 const YES24_BASE = 'https://apis.yes24.com/v1';
-const YES24_PATHS = new Set(['category/list', 'category/bestseller']);
+const YES24_PATHS = new Set(['category/list', 'category/bestseller', 'goods/itemDetail']);
 const KAKAO_URL = 'https://dapi.kakao.com/v3/search/book';
 const LIBRARY_BASE = 'https://data4library.kr/api';
 const LIBRARY_METHODS = new Set(['loanItemSrch', 'srchDtlList']);
